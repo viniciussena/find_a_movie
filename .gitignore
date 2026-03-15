@@ -176,6 +176,11 @@ dbt/target/
 dbt/logs/
 dbt/dbt_packages/
 dbt/.user.yml
+dbt/package-lock.yml
+dbt/profiles.yml
 
 # Airflow
 airflow/logs/
+
+# Logs (root level)
+logs/

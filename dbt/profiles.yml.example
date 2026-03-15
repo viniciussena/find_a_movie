@@ -1,0 +1,52 @@
+# Copy this file to profiles.yml and fill in your credentials.
+# profiles.yml is gitignored and should never be committed.
+
+#Docker
+find_a_movie:
+  target: prod
+  outputs:
+    dev:
+      type: snowflake
+      account: YOUR_SNOWFLAKE_ACCOUNT
+      user: YOUR_SNOWFLAKE_USER
+      role: YOUR_SNOWFLAKE_ROLE
+      database: YOUR_SNOWFLAKE_DATABASE
+      warehouse: YOUR_SNOWFLAKE_WAREHOUSE
+      schema: BRONZE
+      threads: 4
+      private_key_path: /home/airflow/.ssh/your_rsa_key.p8
+    prod:
+      type: snowflake
+      account: YOUR_SNOWFLAKE_ACCOUNT
+      user: YOUR_SNOWFLAKE_USER
+      role: YOUR_SNOWFLAKE_ROLE
+      database: YOUR_SNOWFLAKE_DATABASE
+      warehouse: YOUR_SNOWFLAKE_WAREHOUSE
+      schema: BRONZE
+      threads: 4
+      private_key_path: /home/airflow/.ssh/your_rsa_key.p8
+
+#Windows
+# find_a_movie:
+#   target: prod
+#   outputs:
+#     dev:
+#       type: snowflake
+#       account: YOUR_SNOWFLAKE_ACCOUNT
+#       user: YOUR_SNOWFLAKE_USER
+#       role: YOUR_SNOWFLAKE_ROLE
+#       database: YOUR_SNOWFLAKE_DATABASE
+#       warehouse: YOUR_SNOWFLAKE_WAREHOUSE
+#       schema: BRONZE
+#       threads: 4
+#       private_key_path: C:\Users\YOUR_USER\.ssh\your_rsa_key.p8
+#     prod:
+#       type: snowflake
+#       account: YOUR_SNOWFLAKE_ACCOUNT
+#       user: YOUR_SNOWFLAKE_USER
+#       role: YOUR_SNOWFLAKE_ROLE
+#       database: YOUR_SNOWFLAKE_DATABASE
+#       warehouse: YOUR_SNOWFLAKE_WAREHOUSE
+#       schema: BRONZE
+#       threads: 4
+#       private_key_path: C:\Users\YOUR_USER\.ssh\your_rsa_key.p8

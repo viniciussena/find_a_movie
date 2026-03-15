@@ -1,0 +1,28 @@
+name: 'find_a_movie'
+version: '1.0.0'
+
+profile: 'find_a_movie'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+models:
+  find_a_movie:
+    bronze:
+      +materialized: view
+      +tags: ["bronze"]
+    silver:
+      +materialized: table
+      +tags: ["silver"]
+    gold:
+      +materialized: table
+      +tags: ["gold"]
+
+seeds:
+  find_a_movie:
+    +schema: GOLD
+    +quote_columns: false

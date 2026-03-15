@@ -1,0 +1,9 @@
+# Database connector
+snowflake-connector-python
+
+# Dbt core + adapter
+dbt-core
+dbt-snowflake
+
+# Airflow + dbt integration
+astronomer-cosmos
