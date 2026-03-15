@@ -2,76 +2,129 @@
 
 Find your next movie through data.
 
-**Find a Movie** is a movie discovery and analytics platform that builds a curated catalog of films using public movie data.  
+**Find a Movie** is a movie discovery and analytics platform that builds a curated catalog of films using public movie data.
 The platform organizes titles, genres, ratings, and trends into a clean analytical model that powers exploration and interactive dashboards.
 
 This project demonstrates how raw public data can be transformed into a structured data product for discovery, analysis, and insights.
 
 ---
 
-# 🚀 Features
+## 🚀 Features
 
-- Curated movie catalog
+- Curated movie catalog from the TMDB API
 - Exploration by genre, popularity, rating, and release year
-- Analytical data model for insights
+- Analytical data model for insights (Bronze → Silver → Gold)
+- Automated data pipeline orchestrated by Apache Airflow
 - Interactive dashboard for movie discovery
-- Automated data pipeline
 
 ---
 
-# 🧠 How It Works
+## 🏗 Architecture
 
-The platform ingests public movie data and transforms it into a structured analytics model.
-
-Pipeline stages:
-
-1. **Data Ingestion**
-   - Movie data is extracted from a public API.
-
-2. **Raw Data Layer (Bronze)**
-   - Raw responses are stored with minimal processing.
-
-3. **Clean Data Layer (Silver)**
-   - Data is standardized, deduplicated, and normalized.
-
-4. **Analytics Layer (Gold)**
-   - Dimensional models power analytics and dashboards.
-
-5. **Visualization**
-   - Dashboards allow users to explore and analyze the movie catalog.
-
----
-
-# 🏗 Architecture
-
-Public Movie API
-│
-▼
-Apache Airflow
-(Data Ingestion Pipeline)
-│
-▼
-Data Warehouse
-Bronze / Silver / Gold
-│
-▼
-dbt
-(Data Transformations)
-│
-▼
-Analytics Model
-│
-▼
+```
+TMDB API
+    │
+    ▼
+Apache Airflow 3.0.1
+(Orchestration — CeleryExecutor + Redis)
+    │
+    ▼
+Snowflake — DB_FIND_A_MOVIE
+    ├── BRONZE   → Raw ingested data
+    ├── SILVER   → Cleaned and conformed data
+    └── GOLD     → Analytics-ready tables
+    │
+    ▼
+dbt (Data Transformations)
+    │
+    ▼
 BI Dashboard
-
+```
 
 ---
 
-# 📊 Example Insights
+## 🧠 How It Works
 
-The platform enables questions such as:
+1. **Data Ingestion** — Airflow DAGs extract movie data from the TMDB API
+2. **Bronze Layer** — Raw API responses stored with minimal processing in Snowflake
+3. **Silver Layer** — Data standardized, deduplicated, and normalized via dbt
+4. **Gold Layer** — Dimensional models power analytics and dashboards
+5. **Visualization** — Dashboards allow users to explore the movie catalog
 
-- What are the most popular movies?
+---
+
+## 🗂 Project Structure
+
+```
+find_a_movie/
+├── airflow/
+│   ├── config/
+│   │   └── airflow.cfg
+│   └── dags/
+│       └── database_connections/
+│           ├── snowflake_connection.py
+│           └── snowflake_utils.py
+├── dbt/
+│   ├── models/
+│   │   ├── bronze/
+│   │   ├── silver/
+│   │   └── gold/
+│   ├── macros/
+│   ├── dbt_project.yml
+│   ├── packages.yml
+│   └── profiles.yml.example
+├── docs/
+│   └── TMDB Api Reference.md
+├── secrets/              # SSH keys — not committed
+├── docker-compose.yaml
+├── Dockerfile
+├── requirements.txt
+├── .env.example
+└── CLAUDE.md
+```
+
+---
+
+## ⚙️ Local Setup
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/viniciussena/find_a_movie.git
+cd find_a_movie
+```
+
+### 2. Configure environment variables
+
+```bash
+cp .env.example .env
+# Fill in AIRFLOW_PROJ_DIR and SNOWFLAKE_PRIVATE_KEY_PATH
+```
+
+### 3. Configure dbt profile
+
+```bash
+cp dbt/profiles.yml.example dbt/profiles.yml
+# Fill in your Snowflake credentials
+```
+
+### 4. Add Snowflake SSH key
+
+Place your private key at the path defined in `.env` under `SNOWFLAKE_PRIVATE_KEY_PATH`.
+
+### 5. Start the stack
+
+```bash
+docker-compose up --build -d
+```
+
+Airflow UI will be available at [http://localhost:8080](http://localhost:8080) (default: `airflow` / `airflow`).
+
+---
+
+## 📊 Example Insights
+
+- What are the most popular movies right now?
 - How do ratings vary across genres?
 - What genres dominate each release year?
 - Which movies have the highest audience ratings?
@@ -79,93 +132,21 @@ The platform enables questions such as:
 
 ---
 
-# 🗂 Project Structure
+## 🎯 Project Goals
 
-find_a_movie
-│
-├── airflow/
-│ └── dags/
-│
-├── dbt/
-│ └── models/
-│
-├── docker/
-│
-├── scripts/
-│
-├── docker-compose.yml
-├── .env
-├── README.md
-
+- Design a robust ingestion pipeline from a public API
+- Structure layered data models (medallion architecture)
+- Enable analytical exploration through clean data products
+- Deliver insights through dashboards
 
 ---
 
-# ⚙️ Local Setup
+## 📚 Educational Purpose
 
-Clone the repository:
-
-git clone https://github.com/your-user/find_a_movie.git
-
-cd find_a_movie
-
-
-Start the environment:
-
-docker compose up
-
-
-Run the pipeline and build the analytics models.
+This repository is a practical learning project demonstrating modern data pipeline architecture and analytics engineering concepts using industry-standard tools (Airflow, dbt, Snowflake).
 
 ---
 
-# 🎯 Project Goals
-
-This project demonstrates how to build a modern analytics data pipeline and transform public data into a usable data product.
-
-Goals include:
-
-- designing a robust ingestion pipeline
-- structuring layered data models
-- enabling analytical exploration
-- delivering insights through dashboards
-
----
-
-# 📚 Educational Purpose
-
-This repository is designed as a practical learning project demonstrating modern data pipeline architecture and analytics engineering concepts.
-
----
-
-# 📄 License
+## 📄 License
 
 MIT License
-
-
-Run the pipeline and build the analytics models.
-
----
-
-# 🎯 Project Goals
-
-This project demonstrates how to build a modern analytics data pipeline and transform public data into a usable data product.
-
-Goals include:
-
-- designing a robust ingestion pipeline
-- structuring layered data models
-- enabling analytical exploration
-- delivering insights through dashboards
-
----
-
-# 📚 Educational Purpose
-
-This repository is designed as a practical learning project demonstrating modern data pipeline architecture and analytics engineering concepts.
-
----
-
-# 📄 License
-
-MIT License
-
