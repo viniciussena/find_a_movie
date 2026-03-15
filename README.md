@@ -112,13 +112,27 @@ cp dbt/profiles.yml.example dbt/profiles.yml
 
 Place your private key at the path defined in `.env` under `SNOWFLAKE_PRIVATE_KEY_PATH`.
 
-### 5. Start the stack
+### 5. Set up TMDB API access
+
+1. Create a free account at [themoviedb.org](https://www.themoviedb.org/signup)
+2. Go to **Settings → API → Request an API Key → Developer**
+3. Fill in app name (`find_a_movie`), URL (`http://localhost`), type (`Desktop Application`)
+4. Copy the **API Read Access Token** (the long `eyJ...` JWT — not the short API Key)
+
+### 6. Start the stack
 
 ```bash
 docker-compose up --build -d
 ```
 
 Airflow UI will be available at [http://localhost:8080](http://localhost:8080) (default: `airflow` / `airflow`).
+
+### 7. Add the TMDB token to Airflow
+
+After the stack is up:
+- Go to **Admin → Variables → `+`**
+- **Key:** `TMDB_API_READ_ACCESS_TOKEN`
+- **Value:** paste the full `eyJ...` token from TMDB
 
 ---
 

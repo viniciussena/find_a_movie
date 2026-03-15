@@ -1,0 +1,19 @@
+models:
+  - name: base_bronze_TMDB_GENRE_RAW
+    description: The base_bronze_TMDB_GENRE_RAW model is a transformation layer that processes raw data from the TMDB_GENRE_RAW table in the DB_FIND_A_MOVIE.BRONZE schema. It selects and renames specific columns, including GENRE_ID, GENRE_NAME, ENDPOINT, RAW_JSON, and INGESTED_AT, to provide a clean and structured dataset for further analysis.
+    columns:
+      - name: genre_id
+        description: A unique identifier for each genre, represented as a numeric value.
+        data_type: number
+      - name: genre_name
+        description: The name of the genre, represented as a string.
+        data_type: varchar
+      - name: endpoint
+        description: The API endpoint from which the genre data was retrieved.
+        data_type: varchar
+      - name: raw_json
+        description: A variant column containing the raw JSON data retrieved from the TMDB Genre API endpoint.
+        data_type: variant
+      - name: ingested_at
+        description: A timestamp indicating when the data was ingested into the database.
+        data_type: timestamp_ntz

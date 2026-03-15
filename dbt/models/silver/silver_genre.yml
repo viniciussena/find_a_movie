@@ -1,0 +1,25 @@
+models:
+  - name: silver_genre
+    description: The silver_genre model processes raw genre data from the TMDB API, deduplicates it by selecting the latest record for each genre based on the ingestion timestamp, and provides a clean and unique dataset of genres for further analysis.
+    columns:
+      - name: genre_id
+        description: A unique identifier for each genre, sourced from the TMDB dataset.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: genre_name
+        description: The name of the genre, representing the category of movies or content.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: endpoint
+        description: The API endpoint or source reference associated with the genre data.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: ingested_at
+        description: The timestamp indicating when the data was ingested into the system.
+        data_type: timestamp_ntz
+        tests:
+          - not_null

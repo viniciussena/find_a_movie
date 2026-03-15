@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: DB_FIND_A_MOVIE
+    schema: BRONZE
+    tables:
+      - name: TMDB_GENRE_RAW

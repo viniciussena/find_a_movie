@@ -1,0 +1,15 @@
+models:
+  - name: dim_genre
+    description: The dim_genre model is a dimension table that provides information about movie genres. It is sourced from the silver_genre table in the DB_FIND_A_MOVIE.SILVER schema and includes columns for genre ID and genre name.
+    columns:
+      - name: genre_id
+        description: A unique identifier for each genre in the dataset.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: genre_name
+        description: The name of the genre associated with the GENRE_ID.
+        data_type: varchar
+        tests:
+          - not_null
