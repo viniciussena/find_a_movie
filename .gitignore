@@ -181,6 +181,7 @@ dbt/profiles.yml
 
 # Airflow
 airflow/logs/
+airflow/config/airflow.cfg
 
 # Logs (root level)
 logs/
