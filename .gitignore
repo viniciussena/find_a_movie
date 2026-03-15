@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Secrets
+secrets/
+
+# Environment
+.env
+
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt/.user.yml
+
+# Airflow
+airflow/logs/
+
+# OS
+.DS_Store
+Thumbs.db
