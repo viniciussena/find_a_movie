@@ -33,19 +33,22 @@ def ingest_genres() -> None:
         cur.execute("""
             CREATE TABLE IF NOT EXISTS TMDB_GENRE_RAW (
                 genre_id    INTEGER       NOT NULL,
-                genre_name  VARCHAR(100)  NOT NULL,
                 endpoint    VARCHAR(255)  NOT NULL,
                 raw_json    VARIANT       NOT NULL,
                 ingested_at TIMESTAMP_NTZ NOT NULL DEFAULT CURRENT_TIMESTAMP()
             )
         """)
-        insert_values = [(g["id"], g["name"], "/genre/movie/list", raw_json) for g in genres]
+        cur.execute("""
+            ALTER TABLE TMDB_GENRE_RAW DROP COLUMN IF EXISTS genre_name
+        """)
+
+        insert_values = [(g["id"], "/genre/movie/list", raw_json) for g in genres]
 
         insert_sql = """
-            INSERT INTO TMDB_GENRE_RAW (genre_id, genre_name, endpoint, raw_json)
-            SELECT column1, column2, column3, PARSE_JSON(column4)
+            INSERT INTO TMDB_GENRE_RAW (genre_id, endpoint, raw_json)
+            SELECT column1, column2, PARSE_JSON(column3)
             FROM VALUES {}
-        """.format(",".join(["(%s, %s, %s, %s)"] * len(insert_values)))
+        """.format(",".join(["(%s, %s, %s)"] * len(insert_values)))
 
         cur.execute(insert_sql, [v for row in insert_values for v in row])
         conn.commit()

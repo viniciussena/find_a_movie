@@ -4,7 +4,6 @@ with source as (
   renamed as (
       select
           {{ adapter.quote("GENRE_ID") }},
-        {{ adapter.quote("GENRE_NAME") }},
         {{ adapter.quote("ENDPOINT") }},
         {{ adapter.quote("RAW_JSON") }},
         {{ adapter.quote("INGESTED_AT") }}
@@ -12,4 +11,3 @@ with source as (
       from source
   )
   select * from renamed
-    

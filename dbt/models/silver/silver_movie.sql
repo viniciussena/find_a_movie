@@ -15,7 +15,7 @@ deduplicated as (
         RAW_JSON:original_title::VARCHAR as ORIGINAL_TITLE,
         RAW_JSON:original_language::VARCHAR as ORIGINAL_LANGUAGE,
         RAW_JSON:overview::VARCHAR      as OVERVIEW,
-        RAW_JSON:release_date::DATE     as RELEASE_DATE,
+        NULLIF(RAW_JSON:release_date::VARCHAR, '')::DATE as RELEASE_DATE,
         RAW_JSON:popularity::FLOAT      as POPULARITY,
         RAW_JSON:vote_average::FLOAT    as VOTE_AVERAGE,
         RAW_JSON:vote_count::INTEGER    as VOTE_COUNT,
