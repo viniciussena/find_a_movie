@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
 from airflow.operators.bash import BashOperator
 from airflow.utils.trigger_rule import TriggerRule
 
 from tmdb_pipeline.tasks.GET_GenreMovieList import ingest_genres
+from tmdb_pipeline.tasks.GET_MovieList import ingest_movies
 
 
 @dag(
@@ -15,11 +16,15 @@ from tmdb_pipeline.tasks.GET_GenreMovieList import ingest_genres
     catchup=False,
     tags=["tmdb", "bronze", "genres"],
 )
-def tmdb_genres_pipeline():
+def tmdb_pipeline():
 
     @task()
     def load_genres():
         ingest_genres()
+
+    @task(retries=1, retry_delay=timedelta(minutes=2))
+    def load_movies():
+        ingest_movies()
 
     dbt_run = BashOperator(
         task_id="dbt_run",
@@ -33,7 +38,7 @@ def tmdb_genres_pipeline():
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
-    load_genres() >> dbt_run >> dbt_test
+    [load_genres(), load_movies()] >> dbt_run >> dbt_test
 
 
-tmdb_genres_pipeline()
+tmdb_pipeline()

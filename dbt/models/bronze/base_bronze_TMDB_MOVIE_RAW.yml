@@ -1,0 +1,16 @@
+models:
+  - name: base_bronze_TMDB_MOVIE_RAW
+    description: Base model over raw movie data ingested from the TMDB /discover/movie endpoint. One row per movie per ingestion run.
+    columns:
+      - name: MOVIE_ID
+        description: Unique identifier for the movie as provided by TMDB.
+        data_type: number
+      - name: ENDPOINT
+        description: The API endpoint from which the movie data was retrieved.
+        data_type: varchar
+      - name: RAW_JSON
+        description: Full JSON object for the individual movie as returned by the TMDB API.
+        data_type: variant
+      - name: INGESTED_AT
+        description: Timestamp indicating when the record was ingested into the Bronze layer.
+        data_type: timestamp_ntz

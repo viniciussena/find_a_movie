@@ -1,0 +1,19 @@
+models:
+  - name: bridge_movie_genre
+    description: Bridge table resolving the N:N relationship between dim_movie and dim_genre. Each row represents one movie-genre association.
+    columns:
+      - name: MOVIE_ID
+        description: Foreign key referencing dim_movie.
+        data_type: number
+        tests:
+          - not_null
+      - name: GENRE_ID
+        description: Foreign key referencing dim_genre.
+        data_type: number
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - MOVIE_ID
+            - GENRE_ID

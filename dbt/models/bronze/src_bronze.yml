@@ -6,3 +6,4 @@ sources:
     schema: BRONZE
     tables:
       - name: TMDB_GENRE_RAW
+      - name: TMDB_MOVIE_RAW

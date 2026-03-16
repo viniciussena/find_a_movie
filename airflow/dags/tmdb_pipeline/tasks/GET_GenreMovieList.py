@@ -1,6 +1,6 @@
 import json
 import requests
-from airflow.models import Variable
+from airflow.sdk import Variable
 
 from database_connections.snowflake_connection import get_snowflake_connection
 

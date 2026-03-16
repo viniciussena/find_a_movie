@@ -1,0 +1,63 @@
+models:
+  - name: silver_movie
+    description: Deduplicated movie data extracted from the Bronze layer. One row per movie, keeping the latest ingestion.
+    columns:
+      - name: MOVIE_ID
+        description: Unique identifier for the movie as provided by TMDB.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: TITLE
+        description: The movie title in the requested language.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: ORIGINAL_TITLE
+        description: The original movie title in its original language.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: ORIGINAL_LANGUAGE
+        description: The original language of the movie (ISO 639-1 code).
+        data_type: varchar
+        tests:
+          - not_null
+      - name: OVERVIEW
+        description: A short plot summary of the movie.
+        data_type: varchar
+      - name: RELEASE_DATE
+        description: The theatrical release date of the movie.
+        data_type: date
+        tests:
+          - not_null
+      - name: POPULARITY
+        description: TMDB popularity score for the movie.
+        data_type: float
+        tests:
+          - not_null
+      - name: VOTE_AVERAGE
+        description: Average user rating on TMDB (0-10 scale).
+        data_type: float
+        tests:
+          - not_null
+      - name: VOTE_COUNT
+        description: Total number of user votes on TMDB.
+        data_type: number
+        tests:
+          - not_null
+      - name: ADULT
+        description: Whether the movie is flagged as adult content.
+        data_type: boolean
+        tests:
+          - not_null
+      - name: ENDPOINT
+        description: The API endpoint from which the data was retrieved.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: INGESTED_AT
+        description: Timestamp of the latest ingestion for this movie.
+        data_type: timestamp_ntz
+        tests:
+          - not_null

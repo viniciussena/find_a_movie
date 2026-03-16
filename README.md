@@ -134,6 +134,21 @@ After the stack is up:
 - **Key:** `TMDB_API_READ_ACCESS_TOKEN`
 - **Value:** paste the full `eyJ...` token from TMDB
 
+### 8. Run the pipelines
+
+#### Daily incremental pipeline (genres + current month movies)
+The `tmdb_pipeline` DAG runs automatically on a daily schedule. To trigger manually:
+- Go to **DAGs → tmdb_pipeline → Trigger**
+
+#### Full historical movie load (one-time)
+To populate the full movie catalog from the current month back to 1874:
+- Go to **DAGs → tmdb_full_load → Trigger**
+- This is a one-time operation — estimated runtime is **15-25 hours**
+- The DAG can be safely interrupted and re-triggered; it will restart from the current month
+
+> **Note:** Run the full load before triggering `dbt_run` on the incremental pipeline,
+> otherwise Silver/Gold models will only reflect the current month's data.
+
 ---
 
 ## 📊 Example Insights

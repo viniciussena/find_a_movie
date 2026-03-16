@@ -1,0 +1,19 @@
+models:
+  - name: silver_bridge_movie_genre
+    description: Bridge table resolving the N:N relationship between movies and genres. Each row represents one movie-genre association, derived by exploding the genre_ids array from the raw movie JSON.
+    columns:
+      - name: MOVIE_ID
+        description: Foreign key referencing the movie in silver_movie.
+        data_type: number
+        tests:
+          - not_null
+      - name: GENRE_ID
+        description: Foreign key referencing the genre in silver_genre.
+        data_type: number
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - MOVIE_ID
+            - GENRE_ID
