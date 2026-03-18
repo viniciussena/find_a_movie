@@ -1,0 +1,15 @@
+models:
+  - name: dim_person
+    description: Person dimension table with one row per unique person (actor or crew member) across all movies.
+    columns:
+      - name: PERSON_ID
+        description: Unique TMDB identifier for the person.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: NAME
+        description: Full name of the person.
+        data_type: varchar
+        tests:
+          - not_null

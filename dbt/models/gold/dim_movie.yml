@@ -51,3 +51,21 @@ models:
         data_type: boolean
         tests:
           - not_null
+      - name: IMDB_ID
+        description: IMDb identifier for the movie (e.g. tt0137523). Null if details not yet ingested.
+        data_type: varchar
+      - name: TAGLINE
+        description: The movie tagline. Null if not available or details not yet ingested.
+        data_type: varchar
+      - name: STATUS
+        description: Release status (e.g. Released, In Production). Null if details not yet ingested.
+        data_type: varchar
+      - name: RUNTIME
+        description: Movie runtime in minutes. Null if details not yet ingested.
+        data_type: number
+      - name: BUDGET
+        description: Production budget in USD. Null if details not yet ingested.
+        data_type: number
+      - name: REVENUE
+        description: Box office revenue in USD. Null if details not yet ingested.
+        data_type: number

@@ -7,3 +7,5 @@ sources:
     tables:
       - name: TMDB_GENRE_RAW
       - name: TMDB_MOVIE_RAW
+      - name: TMDB_MOVIE_DETAILS_RAW
+      - name: TMDB_MOVIE_CREDITS_RAW

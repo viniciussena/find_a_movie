@@ -6,6 +6,8 @@ from airflow.utils.trigger_rule import TriggerRule
 
 from tmdb_pipeline.tasks.GET_GenreMovieList import ingest_genres
 from tmdb_pipeline.tasks.GET_MovieList import ingest_movies
+from tmdb_pipeline.tasks.GET_MovieDetails import ingest_movie_details
+from tmdb_pipeline.tasks.GET_MovieCredits import ingest_movie_credits
 
 
 @dag(
@@ -26,6 +28,14 @@ def tmdb_pipeline():
     def load_movies():
         ingest_movies()
 
+    @task(retries=3, retry_delay=timedelta(minutes=5))
+    def load_movie_details():
+        ingest_movie_details()
+
+    @task(retries=3, retry_delay=timedelta(minutes=5))
+    def load_movie_credits():
+        ingest_movie_credits()
+
     dbt_run = BashOperator(
         task_id="dbt_run",
         bash_command="cd /opt/airflow/dbt && dbt run --target prod",
@@ -38,7 +48,7 @@ def tmdb_pipeline():
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
-    [load_genres(), load_movies()] >> dbt_run >> dbt_test
+    [load_genres(), load_movies()] >> load_movie_details() >> load_movie_credits() >> dbt_run >> dbt_test
 
 
 tmdb_pipeline()

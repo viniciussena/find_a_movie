@@ -1,0 +1,30 @@
+models:
+  - name: bridge_movie_crew
+    description: Bridge table resolving the N:N relationship between movies and crew members. One row per movie-person-job association.
+    columns:
+      - name: MOVIE_ID
+        description: Foreign key referencing the movie in dim_movie.
+        data_type: number
+        tests:
+          - not_null
+      - name: PERSON_ID
+        description: Foreign key referencing the person in dim_person.
+        data_type: number
+        tests:
+          - not_null
+      - name: JOB
+        description: Specific job title (e.g. Director, Producer, Screenplay).
+        data_type: varchar
+        tests:
+          - not_null
+      - name: DEPARTMENT
+        description: Department the crew member belongs to (e.g. Directing, Writing, Production).
+        data_type: varchar
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - MOVIE_ID
+            - PERSON_ID
+            - JOB
