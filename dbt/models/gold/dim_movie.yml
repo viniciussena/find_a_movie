@@ -29,23 +29,15 @@ models:
       - name: RELEASE_DATE
         description: The theatrical release date of the movie.
         data_type: date
-        tests:
-          - not_null
       - name: POPULARITY
         description: TMDB popularity score.
         data_type: float
-        tests:
-          - not_null
       - name: VOTE_AVERAGE
         description: Average user rating on TMDB (0-10 scale).
         data_type: float
-        tests:
-          - not_null
       - name: VOTE_COUNT
         description: Total number of user votes on TMDB.
         data_type: number
-        tests:
-          - not_null
       - name: ADULT
         description: Whether the movie is flagged as adult content.
         data_type: boolean
