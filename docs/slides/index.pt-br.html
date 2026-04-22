@@ -1,0 +1,1552 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pipelines de Dados Modernos — Airflow + dbt na Prática</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@300..700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0b0a08;
+    --ink-2: #121010;
+    --cream: #f2ede4;
+    --cream-dim: #c9c2b4;
+    --muted: #8b8579;
+    --rule: rgba(242, 237, 228, 0.12);
+    --rule-strong: rgba(242, 237, 228, 0.28);
+    --amber: #5b9dff;
+    --amber-soft: #9cc4ff;
+    --sage: #7fa8a1;
+    --plum: #b8646e;
+    --serif: "Fraunces", "Times New Roman", serif;
+    --sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--ink);
+    color: var(--cream);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(1200px 600px at 10% 0%, rgba(91, 157, 255, 0.08), transparent 60%),
+      radial-gradient(900px 500px at 100% 100%, rgba(156, 196, 255, 0.05), transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.93 0 0 0 0 0.89 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 3;
+  }
+
+  .slide {
+    position: absolute; inset: 0;
+    padding: clamp(36px, 6vh, 72px) clamp(36px, 7vw, 96px);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition: opacity 520ms var(--ease), transform 720ms var(--ease), visibility 0s linear 520ms;
+  }
+
+  .slide.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 640ms var(--ease), transform 860ms var(--ease), visibility 0s;
+  }
+
+  .slide.active .reveal {
+    animation: reveal 900ms var(--ease) both;
+  }
+  .slide.active .reveal-2 { animation-delay: 120ms; }
+  .slide.active .reveal-3 { animation-delay: 220ms; }
+  .slide.active .reveal-4 { animation-delay: 320ms; }
+  .slide.active .reveal-5 { animation-delay: 420ms; }
+  .slide.active .reveal-6 { animation-delay: 520ms; }
+  .slide.active .reveal-7 { animation-delay: 620ms; }
+  .slide.active .reveal-8 { animation-delay: 720ms; }
+
+  @keyframes reveal {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Chrome */
+  .chrome-top,
+  .chrome-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .chrome-top .brand {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .chrome-top .brand .mark {
+    width: 10px; height: 10px;
+    background: var(--amber);
+    border-radius: 2px;
+    transform: rotate(45deg);
+  }
+  .chrome-bottom { margin-top: auto; }
+  .chrome-bottom .pager {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .chrome-bottom .pager .count {
+    color: var(--cream);
+    font-variant-numeric: tabular-nums;
+  }
+  .chrome-bottom .progress {
+    flex: 0 0 160px;
+    height: 1px;
+    background: var(--rule);
+    position: relative;
+    overflow: hidden;
+  }
+  .chrome-bottom .progress > span {
+    position: absolute; inset: 0 auto 0 0;
+    background: var(--cream);
+    width: 0%;
+    transition: width 520ms var(--ease);
+  }
+
+  /* Layout helpers */
+  .inner { align-self: center; }
+  .grid { display: grid; gap: clamp(18px, 2vw, 28px); }
+  .col-2 { grid-template-columns: 1fr 1fr; }
+  .col-7-5 { grid-template-columns: 7fr 5fr; }
+  .col-5-7 { grid-template-columns: 5fr 7fr; }
+
+  /* Typography */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--amber);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 22px; height: 1px;
+    background: var(--amber);
+    display: inline-block;
+  }
+
+  .display {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 144, "SOFT" 40, "wght" 340;
+    font-weight: 340;
+    line-height: 0.94;
+    letter-spacing: -0.02em;
+    color: var(--cream);
+  }
+  .display .it {
+    font-style: italic;
+    font-variation-settings: "opsz" 144, "SOFT" 100, "wght" 340;
+    color: var(--amber-soft);
+  }
+  .display-xl { font-size: clamp(56px, 10vw, 148px); }
+  .display-lg { font-size: clamp(48px, 7.4vw, 108px); }
+  .display-md { font-size: clamp(36px, 5.4vw, 80px); }
+  .display-sm { font-size: clamp(28px, 3.4vw, 52px); }
+
+  .lede {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 48, "wght" 360;
+    font-size: clamp(20px, 1.7vw, 26px);
+    line-height: 1.35;
+    max-width: 52ch;
+    color: var(--cream-dim);
+  }
+
+  .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cream-dim);
+  }
+
+  .rule {
+    height: 1px;
+    background: var(--rule);
+    width: 100%;
+  }
+
+  /* Section divider slide */
+  .section-divider {
+    display: grid;
+    grid-template-columns: minmax(200px, 28%) 1fr;
+    align-items: end;
+    gap: 32px;
+  }
+  .section-divider .section-num {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 144, "SOFT" 100, "wght" 300;
+    font-size: clamp(180px, 28vw, 420px);
+    line-height: 0.8;
+    letter-spacing: -0.04em;
+    color: var(--amber);
+    font-style: italic;
+  }
+  .section-divider .section-meta {
+    padding-bottom: clamp(12px, 3vh, 40px);
+    border-left: 1px solid var(--rule);
+    padding-left: clamp(20px, 3vw, 48px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .section-divider .section-meta h1 {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 96, "wght" 360;
+    font-size: clamp(44px, 6vw, 96px);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+  }
+
+  /* Definition list */
+  .def-list { display: flex; flex-direction: column; }
+  .def-list .def {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: clamp(16px, 2vw, 28px);
+    padding: clamp(22px, 3vh, 34px) 0;
+    border-top: 1px solid var(--rule);
+    align-items: baseline;
+  }
+  .def-list .def:last-child { border-bottom: 1px solid var(--rule); }
+  .def-list .def .n {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    padding-top: 6px;
+  }
+  .def-list .def .t {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 72, "wght" 360;
+    font-size: clamp(24px, 2.6vw, 40px);
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    color: var(--cream);
+  }
+  .def-list .def .t b {
+    font-weight: 600;
+    font-variation-settings: "opsz" 72, "wght" 620;
+    color: var(--amber-soft);
+  }
+  .def-list .def .t em {
+    font-style: italic;
+    color: var(--cream);
+  }
+
+  /* Problem list */
+  .problem-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .problem-list .prob {
+    display: grid;
+    grid-template-columns: 52px 1fr auto;
+    gap: clamp(16px, 2vw, 28px);
+    padding: clamp(14px, 2vh, 22px) 0;
+    border-top: 1px solid var(--rule);
+    align-items: center;
+  }
+  .problem-list .prob:last-child { border-bottom: 1px solid var(--rule); }
+  .problem-list .prob .idx {
+    font-family: var(--mono);
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+  }
+  .problem-list .prob .body {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 72, "wght" 360;
+    font-size: clamp(22px, 2.2vw, 36px);
+    line-height: 1.18;
+    color: var(--cream);
+  }
+  .problem-list .prob .body b {
+    font-variation-settings: "opsz" 72, "wght" 600;
+    color: var(--amber-soft);
+  }
+  .problem-list .prob .mark {
+    width: 22px; height: 22px; position: relative;
+  }
+  .problem-list .prob .mark::before,
+  .problem-list .prob .mark::after {
+    content: ""; position: absolute; left: 50%; top: 50%;
+    width: 20px; height: 1.5px;
+    background: var(--plum);
+    transform-origin: center;
+  }
+  .problem-list .prob .mark::before { transform: translate(-50%, -50%) rotate(45deg); }
+  .problem-list .prob .mark::after { transform: translate(-50%, -50%) rotate(-45deg); }
+
+  /* Feature grid */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  .feature-grid .cell {
+    background: var(--ink);
+    padding: clamp(22px, 3vw, 36px);
+    min-height: clamp(150px, 18vh, 210px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
+    position: relative;
+    transition: background 300ms var(--ease);
+  }
+  .feature-grid .cell:hover { background: var(--ink-2); }
+  .feature-grid .cell .fn {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+  }
+  .feature-grid .cell .ft {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 48, "wght" 420;
+    font-size: clamp(22px, 2vw, 30px);
+    line-height: 1.15;
+    letter-spacing: -0.005em;
+  }
+  .feature-grid .cell .fd {
+    font-family: var(--sans);
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--cream-dim);
+  }
+  .feature-grid .cell .dot {
+    position: absolute;
+    top: 22px; right: 22px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+  }
+
+  /* Pullquote slide */
+  .pullquote {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-content: center;
+    gap: 32px;
+    max-width: 1200px;
+  }
+  .pullquote .quotemark {
+    font-family: var(--serif);
+    font-style: italic;
+    font-variation-settings: "opsz" 144, "SOFT" 100, "wght" 300;
+    font-size: clamp(140px, 18vw, 260px);
+    line-height: 0.6;
+    color: var(--amber);
+    height: 80px;
+  }
+  .pullquote blockquote {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 144, "SOFT" 40, "wght" 340;
+    font-style: italic;
+    font-size: clamp(30px, 4vw, 64px);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--cream);
+  }
+  .pullquote blockquote b {
+    font-style: normal;
+    font-variation-settings: "opsz" 144, "SOFT" 40, "wght" 600;
+    color: var(--amber-soft);
+  }
+  .pullquote .attrib {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pullquote .attrib::before {
+    content: "";
+    width: 36px; height: 1px;
+    background: var(--muted);
+  }
+
+  /* DAG visual (Airflow how-it-works) */
+  .flow-stage {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 28px;
+  }
+  .flow-stage .node {
+    border: 1px solid var(--rule-strong);
+    padding: 20px 22px;
+    position: relative;
+    background: rgba(242, 237, 228, 0.02);
+  }
+  .flow-stage .node::before {
+    content: "";
+    position: absolute; left: -4px; top: -4px;
+    width: 8px; height: 8px;
+    background: var(--amber);
+  }
+  .flow-stage .node .nk {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .flow-stage .node .nt {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 48, "wght" 420;
+    font-size: clamp(22px, 2vw, 30px);
+    margin-bottom: 8px;
+  }
+  .flow-stage .node .nd {
+    font-size: 13.5px;
+    color: var(--cream-dim);
+    line-height: 1.5;
+  }
+
+  .task-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .chip {
+    border: 1px solid var(--rule-strong);
+    padding: 8px 14px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cream-dim);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chip::before {
+    content: "";
+    width: 5px; height: 5px;
+    background: var(--sage);
+    border-radius: 50%;
+  }
+  .chip + .chip::before { background: var(--amber); }
+  .chip:nth-child(3n)::before { background: var(--plum); }
+
+  /* dbt layered visual */
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .stack .layer {
+    position: relative;
+    padding: 18px 22px;
+    border: 1px solid var(--rule-strong);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    background: rgba(242, 237, 228, 0.02);
+  }
+  .stack .layer .ltag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .stack .layer .lname {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 48, "wght" 420;
+    font-size: clamp(20px, 1.8vw, 26px);
+    color: var(--cream);
+  }
+  .stack .layer.bronze { border-left: 3px solid #b58153; }
+  .stack .layer.silver { border-left: 3px solid #c8c6bd; }
+  .stack .layer.gold { border-left: 3px solid var(--amber); }
+
+  /* Closing slide */
+  .closing-trio {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  .closing-trio .col {
+    background: var(--ink);
+    padding: clamp(28px, 4vw, 48px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 340px;
+    position: relative;
+    overflow: hidden;
+  }
+  .closing-trio .col .cnum {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+  }
+  .closing-trio .col .cname {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 96, "wght" 400;
+    font-size: clamp(36px, 4vw, 56px);
+    line-height: 1;
+    letter-spacing: -0.015em;
+  }
+  .closing-trio .col .cname em {
+    font-style: italic;
+    color: var(--amber-soft);
+  }
+  .closing-trio .col .crole {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cream-dim);
+  }
+  .closing-trio .col .cbody {
+    font-family: var(--sans);
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--cream-dim);
+    margin-top: auto;
+  }
+  .closing-trio .col.accent { background: linear-gradient(180deg, #0f1825 0%, #0b0a08 100%); }
+  .closing-trio .col.accent .cname { color: var(--amber); }
+
+  /* SVG decorations */
+  .svg-dag {
+    width: 100%;
+    height: 100%;
+    max-height: clamp(220px, 40vh, 420px);
+  }
+  .svg-dag .edge { stroke: var(--rule-strong); stroke-width: 1; fill: none; }
+  .svg-dag .edge.active { stroke: var(--amber); }
+  .svg-dag .node {
+    fill: var(--ink);
+    stroke: var(--cream);
+    stroke-width: 1;
+  }
+  .svg-dag .node.accent { fill: var(--amber); stroke: var(--amber); }
+  .svg-dag text {
+    fill: var(--cream);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Navigation */
+  .nav {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .nav button {
+    background: transparent;
+    color: var(--cream-dim);
+    border: 1px solid var(--rule-strong);
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    transition: all 180ms var(--ease);
+  }
+  .nav button:hover {
+    color: var(--ink);
+    background: var(--cream);
+    border-color: var(--cream);
+  }
+  .nav button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .hint {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0.7;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .hint kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 10px;
+    color: var(--cream-dim);
+    background: rgba(242, 237, 228, 0.03);
+  }
+
+  /* Title slide specifics */
+  .title-slide {
+    grid-template-rows: auto 1fr auto;
+  }
+  .title-hero {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    align-items: end;
+    gap: clamp(24px, 4vw, 64px);
+    align-self: end;
+    padding-bottom: clamp(20px, 4vh, 48px);
+  }
+  .title-meta {
+    display: flex; flex-direction: column; gap: 18px;
+    border-left: 1px solid var(--rule);
+    padding-left: clamp(20px, 2vw, 32px);
+  }
+  .title-meta .row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+  .title-meta .row .k { color: var(--muted); text-transform: uppercase; }
+  .title-meta .row .v { color: var(--cream); }
+  .title-meta .row .v.amber { color: var(--amber); }
+
+  /* How to explain layout */
+  .howexplain {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(24px, 4vw, 72px);
+    align-items: center;
+  }
+  .howexplain .visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  @media (max-width: 920px) {
+    .feature-grid { grid-template-columns: repeat(2, 1fr); }
+    .closing-trio { grid-template-columns: 1fr; }
+    .howexplain { grid-template-columns: 1fr; }
+    .title-hero { grid-template-columns: 1fr; }
+    .section-divider { grid-template-columns: 1fr; }
+    .section-divider .section-meta { border-left: none; padding-left: 0; border-top: 1px solid var(--rule); padding-top: 24px; }
+    .flow-stage { grid-template-columns: 1fr; }
+    .col-2, .col-7-5, .col-5-7 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- 1. CAPA -->
+  <section class="slide title-slide active" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand">
+        <span class="mark"></span>
+        <span>Find · a · Movie / Notas de Engenharia</span>
+      </div>
+      <div>Vol. 01 — Plataforma de Dados</div>
+    </header>
+
+    <div class="inner title-hero">
+      <div>
+        <div class="eyebrow reveal reveal-2">Um guia prático de campo</div>
+        <h1 class="display display-xl reveal reveal-3" style="margin-top: 22px;">
+          Pipelines<br/>de Dados<br/>
+          <span class="it">Modernos.</span>
+        </h1>
+        <p class="lede reveal reveal-5" style="margin-top: 28px;">
+          Airflow + dbt na prática — orquestração e transformação
+          trabalhando juntos como uma única plataforma confiável.
+        </p>
+      </div>
+      <aside class="title-meta reveal reveal-6">
+        <div class="row"><span class="k">Capítulo</span><span class="v">01 / 14</span></div>
+        <div class="row"><span class="k">Stack</span><span class="v amber">Airflow · dbt · Snowflake</span></div>
+        <div class="row"><span class="k">Camadas</span><span class="v">Bronze → Silver → Gold</span></div>
+        <div class="row"><span class="k">Público</span><span class="v">Engenheiros &amp; Analistas</span></div>
+        <div class="rule" style="margin-top: 6px;"></div>
+        <div class="row"><span class="k">Leitura</span><span class="v">~ 12 min</span></div>
+      </aside>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-8">
+      <span>Índice · Introdução</span>
+      <div class="pager">
+        <div class="progress"><span id="p1"></span></div>
+        <span class="count"><span class="cur">01</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 2. DIVISOR: APACHE AIRFLOW -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>Parte Um</span></div>
+      <div>Orquestração</div>
+    </header>
+
+    <div class="inner section-divider">
+      <div class="section-num reveal reveal-2">01</div>
+      <div class="section-meta reveal reveal-3">
+        <div class="eyebrow">O Maestro</div>
+        <h1>Apache<br/>Airflow.</h1>
+        <p class="lede" style="margin-top: 10px;">
+          O scheduler, o grafo de dependências, a sala de controle —
+          tudo o que faz o pipeline realmente rodar.
+        </p>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-5">
+      <span>Parte 01 · Airflow</span>
+      <div class="pager">
+        <div class="progress"><span id="p2"></span></div>
+        <span class="count"><span class="cur">02</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 3. O QUE É AIRFLOW -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>01 · Airflow</span></div>
+      <div>Definição</div>
+    </header>
+
+    <div class="inner grid col-5-7" style="align-content: center;">
+      <div class="reveal reveal-2">
+        <div class="eyebrow">O que é</div>
+        <h2 class="display display-md" style="margin-top: 20px;">
+          Uma plataforma<br/>para <span class="it">orquestrar</span><br/>workflows.
+        </h2>
+      </div>
+      <div class="def-list reveal reveal-4">
+        <div class="def">
+          <span class="n">01</span>
+          <p class="t">Uma plataforma de <b>orquestração de workflows</b> para engenharia de dados.</p>
+        </div>
+        <div class="def">
+          <span class="n">02</span>
+          <p class="t">Define pipelines como <b>DAGs</b> — Directed Acyclic Graphs.</p>
+        </div>
+        <div class="def">
+          <span class="n">03</span>
+          <p class="t">Substitui <em>scripts manuais</em> e <em>crons espalhados</em>.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-6">
+      <span>Parte 01 · O que é Airflow</span>
+      <div class="pager">
+        <div class="progress"><span id="p3"></span></div>
+        <span class="count"><span class="cur">03</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 4. AIRFLOW — PROBLEMAS -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>01 · Airflow</span></div>
+      <div>O caos que ele resolve</div>
+    </header>
+
+    <div class="inner grid col-5-7" style="align-content: center;">
+      <div class="reveal reveal-2">
+        <div class="eyebrow">O problema</div>
+        <h2 class="display display-md" style="margin-top: 20px;">
+          Antes da<br/>orquestração,<br/><span class="it">entropia.</span>
+        </h2>
+        <p class="lede" style="margin-top: 22px;">
+          Cinco falhas clássicas que todo time de dados reconhece —
+          e que o Airflow dissolve em silêncio.
+        </p>
+      </div>
+
+      <div class="problem-list reveal reveal-4">
+        <div class="prob">
+          <span class="idx">01</span>
+          <p class="body">Scripts rodando <b>fora de ordem</b>.</p>
+          <span class="mark"></span>
+        </div>
+        <div class="prob">
+          <span class="idx">02</span>
+          <p class="body">Sem <b>visibilidade</b> sobre falhas.</p>
+          <span class="mark"></span>
+        </div>
+        <div class="prob">
+          <span class="idx">03</span>
+          <p class="body">Difícil <b>reprocessar</b> ou repetir.</p>
+          <span class="mark"></span>
+        </div>
+        <div class="prob">
+          <span class="idx">04</span>
+          <p class="body">Dependências de execução <b>manuais</b>.</p>
+          <span class="mark"></span>
+        </div>
+        <div class="prob">
+          <span class="idx">05</span>
+          <p class="body">Falta de <b>observabilidade</b> no pipeline.</p>
+          <span class="mark"></span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-6">
+      <span>Parte 01 · O problema que resolve</span>
+      <div class="pager">
+        <div class="progress"><span id="p4"></span></div>
+        <span class="count"><span class="cur">04</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 5. COMO O AIRFLOW FUNCIONA -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>01 · Airflow</span></div>
+      <div>Anatomia</div>
+    </header>
+
+    <div class="inner" style="align-self: center;">
+      <div class="reveal reveal-2">
+        <div class="eyebrow">Como funciona</div>
+        <h2 class="display display-md" style="margin-top: 16px;">
+          Um DAG, um relógio,<br/>uma <span class="it">pista de decolagem.</span>
+        </h2>
+      </div>
+
+      <div class="flow-stage reveal reveal-4" style="margin-top: 36px;">
+        <div class="node">
+          <div class="nk">01 · Definição</div>
+          <div class="nt">O DAG</div>
+          <div class="nd">Você descreve o workflow como código — <b>nós são tasks</b>, arestas são dependências.</div>
+        </div>
+        <div class="node">
+          <div class="nk">02 · Scheduler</div>
+          <div class="nt">Decide quando</div>
+          <div class="nd">Lê o DAG, resolve agendamento e dependências, e <b>enfileira</b> as tasks prontas.</div>
+        </div>
+        <div class="node">
+          <div class="nk">03 · Executor</div>
+          <div class="nt">Faz o trabalho</div>
+          <div class="nd">Executa cada task em um worker — cuida de retries, paralelismo e <b>isolamento</b>.</div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-6" style="margin-top: 36px; display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: center;">
+        <div class="label">Cada task<br/>executa um passo</div>
+        <div class="task-chips">
+          <span class="chip">Extrair</span>
+          <span class="chip">Carregar</span>
+          <span class="chip">Transformar</span>
+          <span class="chip">Validar</span>
+          <span class="chip">Publicar</span>
+        </div>
+      </div>
+
+      <div class="reveal reveal-7" style="margin-top: 28px; border-top: 1px solid var(--rule); padding-top: 18px; display: flex; justify-content: space-between; align-items: center;">
+        <span class="label">E acima de tudo</span>
+        <span style="font-family: var(--serif); font-variation-settings: 'opsz' 48, 'wght' 360; font-style: italic; font-size: clamp(18px, 1.6vw, 24px); color: var(--cream-dim);">
+          A UI — logs, retries, dependências, num só lugar.
+        </span>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-8">
+      <span>Parte 01 · Como funciona</span>
+      <div class="pager">
+        <div class="progress"><span id="p5"></span></div>
+        <span class="count"><span class="cur">05</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 6. AIRFLOW — FEATURES -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>01 · Airflow</span></div>
+      <div>Capacidades</div>
+    </header>
+
+    <div class="inner" style="align-self: center;">
+      <div class="reveal reveal-2" style="display: flex; justify-content: space-between; align-items: end; margin-bottom: 28px;">
+        <div>
+          <div class="eyebrow">Funcionalidades-chave</div>
+          <h2 class="display display-md" style="margin-top: 16px;">
+            Seis coisas que ele<br/>entrega de graça.
+          </h2>
+        </div>
+        <span class="label">F.01 — F.06</span>
+      </div>
+
+      <div class="feature-grid reveal reveal-4">
+        <div class="cell">
+          <span class="dot"></span>
+          <span class="fn">F.01</span>
+          <h3 class="ft">Pipeline como código</h3>
+          <p class="fd">Workflows escritos em Python — versionados, revisados, reprodutíveis.</p>
+        </div>
+        <div class="cell">
+          <span class="fn">F.02</span>
+          <h3 class="ft">Agendamento</h3>
+          <p class="fd">Cron, intervalos ou triggers baseados em assets — tudo declarativo.</p>
+        </div>
+        <div class="cell">
+          <span class="fn">F.03</span>
+          <h3 class="ft">Retries automáticos</h3>
+          <p class="fd">Backoff, SLAs e alertas sem lógica artesanal.</p>
+        </div>
+        <div class="cell">
+          <span class="fn">F.04</span>
+          <h3 class="ft">Monitoramento &amp; logs</h3>
+          <p class="fd">Toda execução, cada task, cada retry — centralizados.</p>
+        </div>
+        <div class="cell">
+          <span class="fn">F.05</span>
+          <h3 class="ft">Dependências explícitas</h3>
+          <p class="fd">Upstream e downstream viram dado, não folclore.</p>
+        </div>
+        <div class="cell">
+          <span class="dot"></span>
+          <span class="fn">F.06</span>
+          <h3 class="ft">Integrações ricas</h3>
+          <p class="fd">Snowflake, S3, Kafka, dbt, APIs — já vem com tudo.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-6">
+      <span>Parte 01 · Funcionalidades-chave</span>
+      <div class="pager">
+        <div class="progress"><span id="p6"></span></div>
+        <span class="count"><span class="cur">06</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 7. COMO EXPLICAR DAG -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>01 · Airflow</span></div>
+      <div>Notas de campo</div>
+    </header>
+
+    <div class="inner howexplain">
+      <div class="pullquote">
+        <div class="quotemark reveal reveal-2">“</div>
+        <blockquote class="reveal reveal-3">
+          Pense num DAG como o <b>mapa do processo.</b>
+          Ele mostra <em>o que</em> precisa acontecer, <em>em que ordem</em>,
+          e <em>o que depende do quê</em>.
+        </blockquote>
+        <p class="reveal reveal-5" style="font-family: var(--serif); font-variation-settings: 'opsz' 72, 'wght' 400; font-size: clamp(20px, 2vw, 28px); color: var(--cream-dim); max-width: 36ch; line-height: 1.35;">
+          Não é só automação — é <b style="color: var(--amber-soft); font-variation-settings: 'opsz' 72, 'wght' 600;">automação com
+          estrutura, controle e visibilidade.</b>
+        </p>
+        <span class="attrib reveal reveal-7">Como explicar um DAG</span>
+      </div>
+
+      <div class="visual reveal reveal-4">
+        <svg class="svg-dag" viewBox="0 0 420 360" aria-hidden="true">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--rule-strong)"/>
+            </marker>
+            <marker id="arrow-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#5b9dff"/>
+            </marker>
+          </defs>
+
+          <!-- edges -->
+          <path class="edge active" d="M60,70 C130,70 140,170 210,170" marker-end="url(#arrow-a)"/>
+          <path class="edge" d="M60,180 C130,180 140,170 210,170" marker-end="url(#arrow)"/>
+          <path class="edge" d="M60,290 C130,290 140,170 210,170" marker-end="url(#arrow)"/>
+          <path class="edge active" d="M240,170 C300,170 310,100 360,100" marker-end="url(#arrow-a)"/>
+          <path class="edge" d="M240,170 C300,170 310,260 360,260" marker-end="url(#arrow)"/>
+
+          <!-- nodes -->
+          <g>
+            <rect class="node" x="20" y="54" width="80" height="34" rx="2"/>
+            <text x="60" y="76" text-anchor="middle">ingest · a</text>
+          </g>
+          <g>
+            <rect class="node" x="20" y="164" width="80" height="34" rx="2"/>
+            <text x="60" y="186" text-anchor="middle">ingest · b</text>
+          </g>
+          <g>
+            <rect class="node" x="20" y="274" width="80" height="34" rx="2"/>
+            <text x="60" y="296" text-anchor="middle">ingest · c</text>
+          </g>
+          <g>
+            <rect class="node accent" x="210" y="152" width="36" height="36" rx="2"/>
+            <text x="228" y="206" text-anchor="middle" style="fill: var(--amber)">transform</text>
+          </g>
+          <g>
+            <rect class="node" x="340" y="84" width="64" height="34" rx="2"/>
+            <text x="372" y="106" text-anchor="middle">test</text>
+          </g>
+          <g>
+            <rect class="node" x="340" y="244" width="64" height="34" rx="2"/>
+            <text x="372" y="266" text-anchor="middle">publish</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-8">
+      <span>Parte 01 · Como explicar um DAG</span>
+      <div class="pager">
+        <div class="progress"><span id="p7"></span></div>
+        <span class="count"><span class="cur">07</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 8. DIVISOR: DBT -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>Parte Dois</span></div>
+      <div>Transformação</div>
+    </header>
+
+    <div class="inner section-divider">
+      <div class="section-num reveal reveal-2">02</div>
+      <div class="section-meta reveal reveal-3">
+        <div class="eyebrow">O Ofício</div>
+        <h1>dbt.</h1>
+        <p class="lede" style="margin-top: 10px;">
+          Onde linhas cruas viram datasets confiáveis —
+          SQL transformado em disciplina de engenharia.
+        </p>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-5">
+      <span>Parte 02 · dbt</span>
+      <div class="pager">
+        <div class="progress"><span id="p8"></span></div>
+        <span class="count"><span class="cur">08</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 9. O QUE É DBT -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>02 · dbt</span></div>
+      <div>Definição</div>
+    </header>
+
+    <div class="inner grid col-5-7" style="align-content: center;">
+      <div class="reveal reveal-2">
+        <div class="eyebrow">O que é</div>
+        <h2 class="display display-md" style="margin-top: 20px;">
+          Um framework de<br/><span class="it">transformação</span><br/>em SQL.
+        </h2>
+      </div>
+      <div class="def-list reveal reveal-4">
+        <div class="def">
+          <span class="n">01</span>
+          <p class="t">Ferramenta de <b>transformação</b> dentro do data warehouse.</p>
+        </div>
+        <div class="def">
+          <span class="n">02</span>
+          <p class="t">Usa <b>SQL</b> como linguagem principal — sem runtime novo.</p>
+        </div>
+        <div class="def">
+          <span class="n">03</span>
+          <p class="t">Adiciona <em>estrutura</em>, <em>testes</em> e <em>documentação</em>.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-6">
+      <span>Parte 02 · O que é dbt</span>
+      <div class="pager">
+        <div class="progress"><span id="p9"></span></div>
+        <span class="count"><span class="cur">09</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 10. DBT — PROBLEMAS -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>02 · dbt</span></div>
+      <div>O caos que ele resolve</div>
+    </header>
+
+    <div class="inner grid col-5-7" style="align-content: center;">
+      <div class="reveal reveal-2">
+        <div class="eyebrow">O problema</div>
+        <h2 class="display display-md" style="margin-top: 20px;">
+          SQL sem<br/>disciplina vira <span class="it">dívida.</span>
+        </h2>
+        <p class="lede" style="margin-top: 22px;">
+          Todo warehouse, cedo ou tarde, tropeça nos mesmos
+          cinco sintomas. dbt transforma cada um deles em fluxo.
+        </p>
+      </div>
+
+      <div class="problem-list reveal reveal-4">
+        <div class="prob">
+          <span class="idx">01</span>
+          <p class="body">SQL <b>bagunçado</b> e sem estrutura.</p>
+          <span class="mark"></span>
+        </div>
+        <div class="prob">
+          <span class="idx">02</span>
+          <p class="body">Transformação misturada com <b>ingestão</b>.</p>
+          <span class="mark"></span>
+        </div>
+        <div class="prob">
+          <span class="idx">03</span>
+          <p class="body">Lógica de negócio <b>duplicada</b> por toda parte.</p>
+          <span class="mark"></span>
+        </div>
+        <div class="prob">
+          <span class="idx">04</span>
+          <p class="body">Pouca <b>confiança</b> nos números.</p>
+          <span class="mark"></span>
+        </div>
+        <div class="prob">
+          <span class="idx">05</span>
+          <p class="body">Manutenção que <b>dói mais</b> a cada sprint.</p>
+          <span class="mark"></span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-6">
+      <span>Parte 02 · O problema que resolve</span>
+      <div class="pager">
+        <div class="progress"><span id="p10"></span></div>
+        <span class="count"><span class="cur">10</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 11. COMO O DBT FUNCIONA -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>02 · dbt</span></div>
+      <div>Anatomia</div>
+    </header>
+
+    <div class="inner grid col-7-5" style="align-content: center; gap: clamp(32px, 4vw, 72px);">
+      <div>
+        <div class="eyebrow reveal reveal-2">Como funciona</div>
+        <h2 class="display display-md reveal reveal-3" style="margin-top: 16px;">
+          Modelos entram.<br/>Um <span class="it">grafo</span> sai.
+        </h2>
+
+        <div class="flow-stage reveal reveal-5" style="grid-template-columns: repeat(2, 1fr); margin-top: 28px;">
+          <div class="node">
+            <div class="nk">01 · Escrever</div>
+            <div class="nt">Models em SQL</div>
+            <div class="nd">Um arquivo SQL = uma transformação, referenciada pelo nome.</div>
+          </div>
+          <div class="node">
+            <div class="nk">02 · Compilar</div>
+            <div class="nt">Montar o DAG</div>
+            <div class="nd">dbt resolve os <b>ref()</b> e gera o grafo de dependências.</div>
+          </div>
+          <div class="node">
+            <div class="nk">03 · Rodar</div>
+            <div class="nt">Materializar</div>
+            <div class="nd">Como tabela, view, incremental ou ephemeral.</div>
+          </div>
+          <div class="node">
+            <div class="nk">04 · Verificar</div>
+            <div class="nt">Testar &amp; documentar</div>
+            <div class="nd">Asserções, linhagem e docs — gerados do mesmo código.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-6" style="align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 14px;">
+        <div class="label">Modelagem em camadas</div>
+        <div class="stack">
+          <div class="layer bronze">
+            <span class="lname">Bronze</span>
+            <span class="ltag">bruto · append-only</span>
+          </div>
+          <div class="layer silver">
+            <span class="lname">Silver</span>
+            <span class="ltag">limpo · conformado</span>
+          </div>
+          <div class="layer gold">
+            <span class="lname">Gold</span>
+            <span class="ltag">negócio · confiável</span>
+          </div>
+        </div>
+        <p class="lede" style="font-size: clamp(15px, 1.1vw, 17px); margin-top: 14px;">
+          Cada camada depende apenas da camada abaixo — <b style="color: var(--amber-soft); font-variation-settings: 'opsz' 48, 'wght' 600;">a linhagem é a arquitetura.</b>
+        </p>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-8">
+      <span>Parte 02 · Como funciona</span>
+      <div class="pager">
+        <div class="progress"><span id="p11"></span></div>
+        <span class="count"><span class="cur">11</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 12. DBT — FEATURES -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>02 · dbt</span></div>
+      <div>Capacidades</div>
+    </header>
+
+    <div class="inner" style="align-self: center;">
+      <div class="reveal reveal-2" style="display: flex; justify-content: space-between; align-items: end; margin-bottom: 28px;">
+        <div>
+          <div class="eyebrow">Funcionalidades-chave</div>
+          <h2 class="display display-md" style="margin-top: 16px;">
+            SQL, com<br/>uma <span class="it">espinha dorsal.</span>
+          </h2>
+        </div>
+        <span class="label">F.01 — F.06</span>
+      </div>
+
+      <div class="feature-grid reveal reveal-4">
+        <div class="cell">
+          <span class="dot"></span>
+          <span class="fn">F.01</span>
+          <h3 class="ft">SQL em primeiro lugar</h3>
+          <p class="fd">A linguagem que o analista já domina — potencializada com Jinja.</p>
+        </div>
+        <div class="cell">
+          <span class="fn">F.02</span>
+          <h3 class="ft">Design modular</h3>
+          <p class="fd">Modelos pequenos, compostos com <b>ref()</b> — sem copy-paste.</p>
+        </div>
+        <div class="cell">
+          <span class="fn">F.03</span>
+          <h3 class="ft">Reprodutível</h3>
+          <p class="fd">Mesmo código, mesmo resultado — em dev, staging e prod.</p>
+        </div>
+        <div class="cell">
+          <span class="fn">F.04</span>
+          <h3 class="ft">Testes nativos</h3>
+          <p class="fd">Unicidade, not-null, relacionamentos e expectativas customizadas.</p>
+        </div>
+        <div class="cell">
+          <span class="fn">F.05</span>
+          <h3 class="ft">Documentação</h3>
+          <p class="fd">Descrições, linhagem e catálogo pesquisável — gerados sozinhos.</p>
+        </div>
+        <div class="cell">
+          <span class="dot"></span>
+          <span class="fn">F.06</span>
+          <h3 class="ft">Camadas por design</h3>
+          <p class="fd">Bronze · Silver · Gold — ou staging · marts. Você escolhe.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-6">
+      <span>Parte 02 · Funcionalidades-chave</span>
+      <div class="pager">
+        <div class="progress"><span id="p12"></span></div>
+        <span class="count"><span class="cur">12</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 13. COMO EXPLICAR DBT -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>02 · dbt</span></div>
+      <div>Notas de campo</div>
+    </header>
+
+    <div class="inner howexplain">
+      <div class="pullquote">
+        <div class="quotemark reveal reveal-2">“</div>
+        <blockquote class="reveal reveal-3">
+          Se o Airflow organiza o pipeline de <em>ponta a ponta</em>,
+          <b>o dbt organiza a inteligência da transformação</b> dentro do warehouse.
+        </blockquote>
+        <p class="reveal reveal-5" style="font-family: var(--serif); font-variation-settings: 'opsz' 72, 'wght' 400; font-size: clamp(20px, 2vw, 28px); color: var(--cream-dim); max-width: 38ch; line-height: 1.35;">
+          Um move os dados. O outro <b style="color: var(--amber-soft); font-variation-settings: 'opsz' 72, 'wght' 600;">dá sentido a eles.</b>
+        </p>
+        <span class="attrib reveal reveal-7">Como explicar o dbt</span>
+      </div>
+
+      <div class="visual reveal reveal-4">
+        <svg class="svg-dag" viewBox="0 0 420 360" aria-hidden="true">
+          <defs>
+            <linearGradient id="gBronze" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#8b5a36"/><stop offset="1" stop-color="#b58153"/>
+            </linearGradient>
+            <linearGradient id="gSilver" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#8a8a83"/><stop offset="1" stop-color="#c8c6bd"/>
+            </linearGradient>
+            <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#2f5da8"/><stop offset="1" stop-color="#5b9dff"/>
+            </linearGradient>
+          </defs>
+
+          <g transform="translate(40,40)">
+            <!-- Bronze slabs -->
+            <rect x="0" y="220" width="340" height="32" fill="url(#gBronze)" opacity="0.85"/>
+            <rect x="0" y="254" width="340" height="4" fill="var(--ink)"/>
+            <text x="346" y="240" style="fill: var(--cream-dim)">BRONZE</text>
+
+            <!-- Silver slabs -->
+            <rect x="30" y="130" width="280" height="32" fill="url(#gSilver)" opacity="0.85"/>
+            <rect x="30" y="164" width="280" height="4" fill="var(--ink)"/>
+            <text x="316" y="150" style="fill: var(--cream-dim)">SILVER</text>
+
+            <!-- Gold slabs -->
+            <rect x="70" y="40" width="200" height="32" fill="url(#gGold)" opacity="0.95"/>
+            <text x="276" y="60" style="fill: var(--amber)">GOLD</text>
+
+            <!-- Flow arrows -->
+            <path d="M170,220 L170,172" stroke="var(--rule-strong)" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
+            <path d="M170,130 L170,82" stroke="var(--rule-strong)" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-8">
+      <span>Parte 02 · Como explicar o dbt</span>
+      <div class="pager">
+        <div class="progress"><span id="p13"></span></div>
+        <span class="count"><span class="cur">13</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 14. ENCERRAMENTO -->
+  <section class="slide" data-slide>
+    <header class="chrome-top reveal">
+      <div class="brand"><span class="mark"></span><span>Encerramento</span></div>
+      <div>Visão geral</div>
+    </header>
+
+    <div class="inner" style="align-self: center;">
+      <div class="reveal reveal-2" style="margin-bottom: clamp(20px, 3vh, 36px);">
+        <div class="eyebrow">A visão geral</div>
+        <h2 class="display display-lg" style="margin-top: 18px;">
+          Duas ferramentas.<br/>Uma <span class="it">plataforma.</span>
+        </h2>
+      </div>
+
+      <div class="closing-trio reveal reveal-4">
+        <div class="col">
+          <span class="cnum">01</span>
+          <h3 class="cname">Airflow</h3>
+          <span class="crole">→ Orquestração</span>
+          <p class="cbody">Faz o pipeline rodar. Agenda, tenta de novo e expõe falhas
+          antes que alguém precise perguntar.</p>
+        </div>
+        <div class="col">
+          <span class="cnum">02</span>
+          <h3 class="cname">dbt</h3>
+          <span class="crole">→ Transformação</span>
+          <p class="cbody">Dá forma aos dados. Testa, documenta e versiona
+          cada modelo dentro do warehouse.</p>
+        </div>
+        <div class="col accent">
+          <span class="cnum">01 + 02</span>
+          <h3 class="cname"><em>Juntos</em></h3>
+          <span class="crole">→ Plataforma de dados confiável</span>
+          <p class="cbody">A orquestração decide <b>quando</b> e <b>em que ordem</b>.
+          O dbt decide <b>o que os dados significam</b>. Juntos: confiança em escala.</p>
+        </div>
+      </div>
+
+      <div class="reveal reveal-6" style="margin-top: clamp(24px, 4vh, 48px); border-top: 1px solid var(--rule); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap;">
+        <span style="font-family: var(--serif); font-variation-settings: 'opsz' 96, 'wght' 360; font-style: italic; font-size: clamp(20px, 2vw, 30px); color: var(--cream-dim);">
+          Construa o pipeline uma vez. Deixe o grafo se explicar sozinho.
+        </span>
+        <span class="label">Fim.</span>
+      </div>
+    </div>
+
+    <footer class="chrome-bottom reveal reveal-7">
+      <span>Encerramento · Visão geral</span>
+      <div class="pager">
+        <div class="progress"><span id="p14"></span></div>
+        <span class="count"><span class="cur">14</span> / 14</span>
+      </div>
+    </footer>
+  </section>
+
+</div>
+
+<nav class="nav" aria-label="Navegação dos slides">
+  <button id="prev" aria-label="Slide anterior">← Voltar</button>
+  <button id="next" aria-label="Próximo slide">Avançar →</button>
+</nav>
+
+<div class="hint">
+  <kbd>←</kbd><kbd>→</kbd> navegar
+  <span style="opacity: 0.5">·</span>
+  <kbd>espaço</kbd> avançar
+  <span style="opacity: 0.5">·</span>
+  <kbd>F</kbd> tela cheia
+</div>
+
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll('[data-slide]'));
+  const total = slides.length;
+  let current = 0;
+
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+
+  function go(i) {
+    if (i < 0 || i >= total || i === current) return;
+    slides[current].classList.remove('active');
+    current = i;
+    slides[current].classList.add('active');
+    updateProgress();
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === total - 1;
+    history.replaceState(null, '', '#' + (current + 1));
+  }
+
+  function updateProgress() {
+    const pct = ((current + 1) / total) * 100;
+    slides.forEach((s) => {
+      const bar = s.querySelector('.progress > span');
+      if (bar) bar.style.width = pct + '%';
+    });
+  }
+
+  prevBtn.addEventListener('click', () => go(current - 1));
+  nextBtn.addEventListener('click', () => go(current + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      e.preventDefault();
+      go(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      go(current - 1);
+    } else if (e.key === 'Home') {
+      go(0);
+    } else if (e.key === 'End') {
+      go(total - 1);
+    } else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    }
+  });
+
+  // Toque (swipe)
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 60) go(current + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+
+  // Deep link inicial
+  const hash = parseInt(location.hash.replace('#', ''), 10);
+  if (hash >= 1 && hash <= total) {
+    slides[0].classList.remove('active');
+    slides[hash - 1].classList.add('active');
+    current = hash - 1;
+  }
+
+  updateProgress();
+  prevBtn.disabled = current === 0;
+  nextBtn.disabled = current === total - 1;
+})();
+</script>
+</body>
+</html>
