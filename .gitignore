@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Claude
+.claude/
+
 # Distribution / packaging
 .Python
 build/
@@ -185,3 +188,4 @@ airflow/config/airflow.cfg
 
 # Logs (root level)
 logs/
+.vscode/settings.json
