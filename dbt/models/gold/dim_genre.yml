@@ -13,3 +13,6 @@ models:
         data_type: varchar
         tests:
           - not_null
+      - name: genre_name_clean
+        description: The uppercase version of the genre name, derived from the GENRE_NAME column.
+        data_type: varchar

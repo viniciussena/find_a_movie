@@ -1,0 +1,25 @@
+models:
+  - name: fct_movies_by_genre
+    description: Fact table with the total count of movies per genre, joining dim_genre and bridge_movie_genre.
+    columns:
+      - name: genre_id
+        description: Unique identifier for the genre.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: genre_name
+        description: Name of the genre.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: genre_name_clean
+        description: Uppercase version of the genre name.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: total_movies
+        description: Total number of movies associated with the genre.
+        data_type: number
+        tests:
+          - not_null
