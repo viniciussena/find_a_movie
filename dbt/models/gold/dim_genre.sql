@@ -10,5 +10,6 @@ with source as (
 
 select
     GENRE_ID,
-    GENRE_NAME
+    GENRE_NAME,
+    UPPER(GENRE_NAME) as GENRE_NAME_CLEAN
 from source
